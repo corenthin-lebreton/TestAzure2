@@ -1,0 +1,66 @@
+name: Build and Deploy React Application on Azure Container
+
+on:
+  push:
+    branches: [ master ]
+  
+
+env: 
+  IMAGE_TAG: latest
+
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Log in to Azure Container Registry
+        run: |
+          echo ${{ secrets.ACR_PASSWORD }} | docker login \
+            ${{ secrets.ACR_NAME }}.azurecr.io \
+            -u ${{ secrets.ACR_USERNAME }} \
+            --password-stdin
+      
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+      
+      - name: Push image to ACR
+        run: |
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      
+      - name: Configure Container App registry credentials
+        run: |
+          az containerapp registry set \
+            --name ${{ secrets.CONTAINERAPP_NAME }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --server ${{ secrets.ACR_NAME }}.azurecr.io \
+            --username ${{ secrets.ACR_USERNAME }} \
+            --password ${{ secrets.ACR_PASSWORD }}
+      
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name ${{ secrets.CONTAINERAPP_NAME }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --image ${{ secrets.ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      
+      - name: Restart Container App to pull latest image
+        run: |
+          REVISION=$(az containerapp revision list \
+            --name ${{ secrets.CONTAINERAPP_NAME }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --query "[0].name" -o tsv)
+          
+          az containerapp revision restart \
+            --name ${{ secrets.CONTAINERAPP_NAME }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --revision $REVISION
