@@ -3,8 +3,8 @@ import { useDropzone } from "react-dropzone";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { ManagedIdentityCredential } from "@azure/identity";
 
-const accountName = "comptecorenthin"; // 🔁 remplace par ton compte de stockage
-const containerName = "reactuploads";  // 🔁 ton conteneur blob
+const accountName = "comptecorenthin"; 
+const containerName = "testcorenthin";  
 const blobServiceUrl = `https://${accountName}.blob.core.windows.net`;
 
 function App() {
