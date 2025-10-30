@@ -1,63 +1,69 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { ManagedIdentityCredential } from "@azure/identity";
 
+const accountName = "comptecorenthin"; // 🔁 remplace par ton compte de stockage
+const containerName = "reactuploads";  // 🔁 ton conteneur blob
+const blobServiceUrl = `https://${accountName}.blob.core.windows.net`;
+
 function App() {
-  const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState("Glisse un fichier ici ou clique pour en sélectionner");
+  const [isUploading, setIsUploading] = useState(false);
 
-  const accountName = "comptecorenthin";        // nom de ton compte de stockage
-  const containerName = "testcorenthin";         // ton conteneur
-  const blobServiceUrl = `https://${accountName}.blob.core.windows.net`;
+  const onDrop = useCallback(async (acceptedFiles) => {
+    if (acceptedFiles.length === 0) return;
+    const file = acceptedFiles[0];
+    setIsUploading(true);
+    setStatus(`Authentification...`);
 
-  const uploadFile = async (file) => {
     try {
-      setUploading(true);
-      setMessage("Authentification avec Managed Identity...");
-
-      // 🔐 Authentification avec l’identité managée du container app
+      // ✅ Authentification avec Managed Identity (fonctionne dans Azure)
       const credential = new ManagedIdentityCredential();
       const blobServiceClient = new BlobServiceClient(blobServiceUrl, credential);
       const containerClient = blobServiceClient.getContainerClient(containerName);
 
-      setMessage(`Téléversement du fichier ${file.name}...`);
-      const blockBlobClient = containerClient.getBlockBlobClient(file.name);
+      setStatus(`Envoi du fichier ${file.name}...`);
+      const blobClient = containerClient.getBlockBlobClient(file.name);
 
-      await blockBlobClient.uploadBrowserData(file, {
+      await blobClient.uploadBrowserData(file, {
         blobHTTPHeaders: { blobContentType: file.type },
       });
 
-      setMessage(`✅ Fichier ${file.name} téléversé avec succès !`);
-    } catch (error) {
-      console.error("Erreur d’upload :", error);
-      setMessage(`❌ Erreur : ${error.message}`);
+      setStatus(`✅ ${file.name} envoyé avec succès !`);
+    } catch (err) {
+      console.error("Erreur:", err);
+      setStatus(`❌ Erreur : ${err.message}`);
     } finally {
-      setUploading(false);
+      setIsUploading(false);
     }
-  };
+  }, []);
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) uploadFile(file);
-  };
+  // 🔹 Initialisation du dropzone
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    multiple: false,
+  });
 
   return (
     <div
-      onDrop={handleDrop}
-      onDragOver={(e) => e.preventDefault()}
+      {...getRootProps()}
       style={{
         width: "400px",
         height: "200px",
-        border: "2px dashed #888",
+        border: "2px dashed #666",
         borderRadius: "10px",
         textAlign: "center",
         lineHeight: "200px",
         margin: "100px auto",
-        background: uploading ? "#eee" : "#fafafa",
+        cursor: "pointer",
+        background: isDragActive ? "#f0f0f0" : "#fafafa",
+        opacity: isUploading ? 0.7 : 1,
+        transition: "all 0.2s ease-in-out",
       }}
     >
-      {message || "Glisse un fichier ici pour l’envoyer vers Azure Blob Storage"}
+      <input {...getInputProps()} />
+      <p>{status}</p>
     </div>
   );
 }
