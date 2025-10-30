@@ -11,17 +11,16 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const upload = multer();
 
-// ⚙️ Config Azure
-const accountName = "comptecorenthin";  // 🔁 remplace par ton nom exact
-const containerName = "testcorenthin";
-const blobServiceUrl = `https://${accountName}.blob.core.windows.net`;
-
-// ➕ Middleware : sert les fichiers React buildés
+// === Serve les fichiers React buildés ===
 app.use(express.static(path.join(__dirname, "../dist")));
 
-// 🔹 Route d’upload
+// === Route d’upload ===
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
+    const accountName = "toncompte";
+    const containerName = "testcorenthin";
+    const blobServiceUrl = `https://${accountName}.blob.core.windows.net`;
+
     const credential = new ManagedIdentityCredential();
     const blobServiceClient = new BlobServiceClient(blobServiceUrl, credential);
     const containerClient = blobServiceClient.getContainerClient(containerName);
@@ -33,15 +32,15 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     res.status(200).json({ message: "✅ Fichier envoyé avec succès !" });
   } catch (err) {
-    console.error("Erreur d’upload:", err);
+    console.error("Erreur:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Fallback pour React Router
+// === Redirige toutes les routes vers index.html (React Router) ===
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
 const PORT = process.env.PORT || 80;
-app.listen(PORT, () => console.log(`✅ Serveur démarré sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Serveur Express lancé sur le port ${PORT}`));
