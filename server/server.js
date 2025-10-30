@@ -17,7 +17,7 @@ app.use(express.static(path.join(__dirname, "../dist")));
 // === Route d’upload ===
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
-    const accountName = "toncompte";
+    const accountName = "comptecorenthin";
     const containerName = "testcorenthin";
     const blobServiceUrl = `https://${accountName}.blob.core.windows.net`;
 
