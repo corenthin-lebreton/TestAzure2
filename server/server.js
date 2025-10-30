@@ -3,7 +3,13 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import { BlobServiceClient } from "@azure/storage-blob";
-import { ManagedIdentityCredential } from "@azure/identity";
+import { DefaultAzureCredential } from "@azure/identity";
+
+// Active les logs Azure pour debug (facultatif)
+process.env.AZURE_LOG_LEVEL = "info";
+
+// Initialise le credential une seule fois
+const credential = new DefaultAzureCredential();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,7 +27,6 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     const containerName = "testcorenthin";
     const blobServiceUrl = `https://${accountName}.blob.core.windows.net`;
 
-    const credential = new ManagedIdentityCredential();
     const blobServiceClient = new BlobServiceClient(blobServiceUrl, credential);
     const containerClient = blobServiceClient.getContainerClient(containerName);
 
@@ -38,7 +43,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 });
 
 // === Redirige toutes les routes vers index.html (React Router) ===
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
