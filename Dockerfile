@@ -1,20 +1,21 @@
-#------------------------------
-
-FROM node:20-alpine AS build
-
+# ---- Étape build : construit le React app ----
+FROM node:18-alpine AS build
 WORKDIR /app
-
 COPY package*.json ./
-
 RUN npm ci
-
 COPY . .
 RUN npm run build
-#------------------------------
-FROM nginx:stable-alpine AS production
 
-COPY --from=build /app/dist /usr/share/nginx/html 
+# ---- Étape runtime : exécute le serveur Node ----
+FROM node:18-alpine
+WORKDIR /app
+
+# Copie le build React et le serveur
+COPY --from=build /app/dist ./dist
+COPY server ./server
+COPY package*.json ./
+
+RUN npm ci --omit=dev
 
 EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server/server.js"]
