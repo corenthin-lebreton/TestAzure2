@@ -38,7 +38,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 });
 
 // === Redirige toutes les routes vers index.html (React Router) ===
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
