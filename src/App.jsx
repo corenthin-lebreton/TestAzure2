@@ -26,7 +26,7 @@ function App() {
         </p>
       </div>
       <p className="read-the-docs">
-        Modification pour la pipeline 3
+        Modification pour la pipeline 5
       </p>
     </>
   )
