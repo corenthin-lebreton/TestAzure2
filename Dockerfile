@@ -1,5 +1,5 @@
 # ---- Étape build : construit le React app ----
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build
 
 # ---- Étape runtime : exécute le serveur Node ----
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 
 # Copie le build React et le serveur
@@ -17,5 +17,5 @@ COPY package*.json ./
 
 RUN npm ci --omit=dev
 
-EXPOSE 80
+EXPOSE 8080
 CMD ["node", "server/server.js"]
